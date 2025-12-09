@@ -1,13 +1,50 @@
 
 
-test = [{'Name': '月姫\u3000アルクェイド\u3000雄猫堂\u3000ホビージャパン\u3000wf\u3000ガレージキット\u3000フィギュア', 'Price': 5500, 'Image': 'https://auc-pctr.c.yimg.jp/i/auctions.c.yimg.jp/images.auctions.yahoo.co.jp/image/dr000/auc0112/user/c41e49186e349cbad1023ea9d0a7400f5f8df3668e80b7c42d74e9c0956661b0/i-img437x487-17647606731144iyytow324334.jpg?pri=l&w=300&h=300&up=0&nf_src=sy&nf_path=images/auc/pc/top/image/1.0.3/na_170x170.png&nf_st=200', 'Link': 'https://auctions.yahoo.co.jp/jp/auction/o1211037779'}]
-document.addEventListener("DOMContentLoaded", ()=>{
+async function getYahooProducts(query) {
+    const response = await fetch(`http://127.0.0.1:5000/scrape/Yahoo/?query=${query}`)
+    const data = await response.json()
+    return data
+}
+async function getAmiAmiProducts(query) {
+    const response = await fetch(`http://127.0.0.1:5000/scrape/AmiAmi/?query=${query}`)
+    const data = await response.json()
+    return data
+}
+async function getAmiAmiProductsJP(query) {
+    const response = await fetch(`http://127.0.0.1:5000/scrape/AmiAmi/JP/?query=${query}`)
+    const data = await response.json()
+    return data
+}
+async function getMandarakeProducts(query) {
+    const response = await fetch(`http://127.0.0.1:5000/scrape/Mandarake/?query=${query}`)
+    const data = await response.json()
+    return data
+}
+
+async function getAllProducts(query) {
+    productList = []
+    if (/\p{Script=Hiragana}|\p{Script=Katakana}|\p{Script=Han}/u.test(query)) {
+        amiItems = await getAmiAmiProductsJP(query)
+    }
+    else {
+        amiItems = await getAmiAmiProducts(query)
+    }
     
-    document.querySelector("input").addEventListener("keydown", function(e){
-        if (e.key = "Enter") {
-            for (let i of test){
-                row = document.querySelector("table").insertRow()
+    productList = productList.concat(amiItems)
+    mandaItems = await getMandarakeProducts(query)
+    productList = productList.concat(mandaItems)
+    yahooItems = await getYahooProducts(query)
+    productList = productList.concat(yahooItems)
+    return productList
+}
+
+
+function buildRowElements(products){
+    document.querySelector("tbody").textContent = ''
+    for (let i of products){
+                row = document.querySelector("tbody").insertRow()
                 newCell = document.createElement('th')
+                newCell.scope = "row"
                 image = document.createElement('img')
                 image.src = i['Image']
                 newCell.appendChild(image)
@@ -17,7 +54,12 @@ document.addEventListener("DOMContentLoaded", ()=>{
                 newCell.textContent = i['Name']
                 
                 newCell = row.insertCell()
-                newCell.textContent = i['Price'] + " yen"
+                newCell.textContent = i['Price']
+
+                newCell = row.insertCell()
+                image = document.createElement('img')
+                image.src = i['Logo']
+                newCell.appendChild(image)
 
                 newCell = row.insertCell()
                 link = document.createElement('a')
@@ -26,7 +68,21 @@ document.addEventListener("DOMContentLoaded", ()=>{
                 link.target = "_blank"
                 newCell.appendChild(link)
             }
-            
+}
+
+let products = []
+
+document.addEventListener("DOMContentLoaded", ()=>{
+    
+    document.querySelector("input").addEventListener("keydown", function(e){
+        if (e.key == "Enter" && this.value != '') {
+            products = []
+            this.disabled = true
+            getAllProducts(this.value).then( allItems => {
+                products = allItems
+                buildRowElements(products)
+                this.disabled = false
+            })
 
         }
     })

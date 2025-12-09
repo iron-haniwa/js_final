@@ -3,9 +3,10 @@ from scraper import *
 from flask_restful import Resource, Api, request
 from flask_cors import CORS
 
+
 app = Flask(__name__)
 api = Api(app)
-
+cors = CORS(app, resources={r"/scrape/*": {"origins": "*"}})
 
 class AmiAmiProducts(Resource):
 
@@ -13,6 +14,15 @@ class AmiAmiProducts(Resource):
         args = request.args
         if 'query' in args:
             products = scrapeAmiAmi(args['query'])
+            return products
+        else:
+            return 'You must pass in a query'
+class AmiAmiProductsJP(Resource):
+
+    def get(self):
+        args = request.args
+        if 'query' in args:
+            products = scrapeAmiAmiJP(args['query'])
             return products
         else:
             return 'You must pass in a query'
@@ -36,6 +46,7 @@ class YahooProducts(Resource):
             return 'You must pass in a query'
 
 api.add_resource(AmiAmiProducts, '/scrape/AmiAmi/')
+api.add_resource(AmiAmiProductsJP, '/scrape/AmiAmi/JP/')
 api.add_resource(MandarakeProducts, '/scrape/Mandarake/')
 api.add_resource(YahooProducts, '/scrape/Yahoo/')
 
